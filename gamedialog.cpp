@@ -1,0 +1,232 @@
+#include "gamedialog.h"
+#include "ui_gamedialog.h"
+
+const QString warshipPath = "C:\\Users\\Alex\\Desktop\\fac\\an1\\sem2\\oop\\lab12-14game\\gui\\lab12game\\warship.jpg";
+const QString yachtPath = "C:\\Users\\Alex\\Desktop\\fac\\an1\\sem2\\oop\\lab12-14game\\gui\\lab12game\\yacht.jpg";
+const QString submarinePath = "C:\\Users\\Alex\\Desktop\\fac\\an1\\sem2\\oop\\lab12-14game\\gui\\lab12game\\submarine.jpg";
+const QString hitPath = "C:\\Users\\Alex\\Desktop\\fac\\an1\\sem2\\oop\\lab12-14game\\gui\\lab12game\\hit.png";
+const QString clearPath = "C:\\Users\\Alex\\Desktop\\fac\\an1\\sem2\\oop\\lab12-14game\\gui\\lab12game\\clear.png";
+
+GameDialog::GameDialog(Logic* serv, QWidget *parent) :
+    QDialog(parent),
+    m_ui(new Ui::GameDialog),
+    m_serv(serv)
+{
+    this->m_ui->setupUi(this);
+    this->game();
+}
+
+GameDialog::~GameDialog()
+{
+    if(this->m_ui) {
+        delete this->m_ui;
+        this->m_ui = nullptr;
+    }
+}
+
+void GameDialog::on_guessButton_clicked()
+{
+    QString guess = this->m_ui->lineEdit->text();
+    std::string actGuess = guess.toStdString();
+    bool resUser = this->m_serv->hitReg(actGuess, 'u');
+    if(resUser)
+       //draw the result on guessTable
+    {
+        std::pair<int, int> gue = this->m_serv->guessDecoder(actGuess);
+        QPixmap p(hitPath);
+        QPixmap newP = p.scaled(QSize(35,35), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        QBrush b(newP);
+        QTableWidgetItem* item = new QTableWidgetItem;
+        item->setBackground(b);
+        this->m_ui->guessTable->setItem(gue.first - 1, gue.second - 1, item);
+
+    }
+    else {
+        std::pair<int, int> gue = this->m_serv->guessDecoder(actGuess);
+        QPixmap p(clearPath);
+        QPixmap newP = p.scaled(QSize(25,25), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        QBrush b(newP);
+        QTableWidgetItem* item = new QTableWidgetItem;
+        item->setBackground(b);
+        this->m_ui->guessTable->setItem(gue.first - 1, gue.second - 1, item);
+    }
+    std::string aiGuess = this->m_serv->aiGuess();
+    bool resAI = this->m_serv->hitReg(aiGuess, 'a');
+    //verify if we need to update a hit element
+    if(resAI)
+        updateAfterHit();
+    int gameState = this->m_serv->getGameStatus();
+    //weird flex but ok
+    if(gameState == -1)
+        throw Exc("The AI won!");
+    else if (gameState == 1)
+        throw Exc("You won!");
+    //
+    std::string text;
+    if(resUser){
+       if(resAI)
+           text = "Hit!\n AI Guess was " + aiGuess + ", which was a hit!\n";
+       else
+           text = "Hit!\n AI Guess was " + aiGuess + ", which missed!\n";
+    }
+    else {
+        if(resAI)
+            text = "Clear!\n AI Guess was " + aiGuess + ", which was a hit!\n";
+        else
+            text = "Clear!\n AI Guess was " + aiGuess + ", which missed!\n";
+    }
+    QString toShow = QString::fromStdString(text);
+    this->m_ui->label->setText(toShow);
+}
+
+void GameDialog::game() {
+//draw board headers with letters
+    for(int i=0;i<this->m_ui->playerTable->columnCount();++i){
+//expensive but no other solution found
+            char s = 97 + i;
+            std::string str(1, s);
+            QString strr = QString::fromStdString(str);
+            this->m_ui->playerTable->setHorizontalHeaderItem(i, new QTableWidgetItem);
+            Q_ASSUME(this->m_ui->playerTable->model()->setHeaderData(i,Qt::Horizontal,strr));
+
+        }
+    for(int i=0;i<this->m_ui->guessTable->columnCount();++i){
+        char s = 97 + i;
+        std::string str(1, s);
+        QString strr = QString::fromStdString(str);
+        this->m_ui->guessTable->setHorizontalHeaderItem(i, new QTableWidgetItem);
+        Q_ASSUME(this->m_ui->guessTable->model()->setHeaderData(i,Qt::Horizontal,strr));
+        }
+   //doing checks for correctly loading images
+    QImage img;
+    bool loadedWarships = img.load(warshipPath);
+    bool loadedYachts = img.load(yachtPath);
+    bool loadedSubmarines = img.load(submarinePath);
+    if(!loadedWarships || !loadedYachts || !loadedSubmarines)
+        throw Exc("Some images haven't loaded correctly!");
+    //load ai board
+    this->m_serv->aiStart();
+    //drawing player board
+    for(auto elem : this->m_serv->getAllUser()) {
+        //drawing for warships
+        if(dynamic_cast<Warship*>(elem) != nullptr) {
+            QPixmap p(warshipPath);
+            QPixmap newP = p.scaled(QSize(60,60), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+            QBrush b(newP);
+            if(elem->getOrientation() == 1)
+            {
+                for(int i = 0; i < dynamic_cast<Warship*>(elem)->getLength(); i++ )
+                {
+                    QTableWidgetItem* imgg = new QTableWidgetItem;
+                    imgg->setBackground(b);
+                    this->m_ui->playerTable->setItem(elem->getStartX() + i - 1 , elem->getStartY() - 1, imgg);
+                    //delete imgg;
+                    //imgg = nullptr;
+
+                }
+            }
+            else {
+                for(int i = 0; i < dynamic_cast<Warship*>(elem)->getLength(); i++ )
+                {
+                    QTableWidgetItem* imgg = new QTableWidgetItem;
+                    imgg->setBackground(b);
+                    this->m_ui->playerTable->setItem(elem->getStartX() - 1 , elem->getStartY() + i - 1, imgg);
+                    //delete imgg;
+                    //imgg = nullptr;
+                }
+            }
+        }
+        //drawing for yachts
+        if(dynamic_cast<Yacht*>(elem) != nullptr) {
+            QPixmap p(yachtPath);
+            QPixmap newP = p.scaled(QSize(60,60), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+            QBrush b(newP);
+            if(elem->getOrientation() == 1)
+            {
+                for(int i = 0; i < dynamic_cast<Yacht*>(elem)->getLength(); i++ )
+                {
+                    QTableWidgetItem* imgg = new QTableWidgetItem;
+                    imgg->setBackground(b);
+                    this->m_ui->playerTable->setItem(elem->getStartX() + i - 1 , elem->getStartY() - 1, imgg);
+                    //delete imgg;
+                    //imgg = nullptr;
+                }
+            }
+            else {
+                for(int i = 0; i < dynamic_cast<Yacht*>(elem)->getLength(); i++)
+                {
+                    QTableWidgetItem* imgg = new QTableWidgetItem;
+                    imgg->setBackground(b);
+                    this->m_ui->playerTable->setItem(elem->getStartX() - 1 , elem->getStartY() + i - 1, imgg);
+                    //delete imgg;
+                    //imgg = nullptr;
+                }
+            }
+        }
+        //drawing for submarines
+        if(dynamic_cast<Submarine*>(elem) != nullptr) {
+            QPixmap p(submarinePath);
+            QPixmap newP = p.scaled(QSize(60,60), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+            QBrush b(newP);
+            if(elem->getOrientation() == 1)
+            {
+
+                for(int i = 0; i < dynamic_cast<Submarine*>(elem)->getLength(); i++ )
+                {
+                    QTableWidgetItem* imgg = new QTableWidgetItem;
+                    imgg->setBackground(b);
+                    this->m_ui->playerTable->setItem(elem->getStartX() + i - 1 , elem->getStartY() - 1, imgg);
+                    //delete imgg;
+                    //imgg = nullptr;
+                }
+            }
+            else {
+                for(int i = 0; i < dynamic_cast<Submarine*>(elem)->getLength(); i++ )
+                {
+                    QTableWidgetItem* imgg = new QTableWidgetItem;
+                    imgg->setBackground(b);
+                    this->m_ui->playerTable->setItem(elem->getStartX() - 1 , elem->getStartY() + i - 1, imgg);
+                    //delete imgg;
+                    //imgg = nullptr;
+                }
+            }
+        }
+    }
+    //end of drawing
+}
+
+void GameDialog::updateAfterHit() {
+    for(auto elem: this->m_serv->getAllUser()) {
+        if(elem->getHidden() == false)
+        {
+            QPixmap p(hitPath);
+            QPixmap newP = p.scaled(QSize(35,35), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+            QBrush b(newP);
+            auto getElementLength = [](IE* elem) {
+                if(dynamic_cast<Warship*>(elem) != nullptr)
+                    return dynamic_cast<Warship*>(elem)->getLength();
+                if(dynamic_cast<Yacht*>(elem) != nullptr)
+                   return dynamic_cast<Yacht*>(elem)->getLength();
+                if(dynamic_cast<Submarine*>(elem) != nullptr)
+                    return dynamic_cast<Submarine*>(elem)->getLength();
+            };
+            int elemLength = getElementLength(elem);
+            if(elem->getOrientation() == 1) {
+                for(int i = 0; i < elemLength; i++)
+                {
+                    QTableWidgetItem* imgg = new QTableWidgetItem;
+                    imgg->setBackground(b);
+                    this->m_ui->playerTable->setItem(elem->getStartX() + i - 1 , elem->getStartY() - 1, imgg);
+                }
+            }
+            else {
+                for(int i = 0; i < elemLength; i++)
+                {
+                QTableWidgetItem* imgg = new QTableWidgetItem;
+                imgg->setBackground(b);
+                this->m_ui->playerTable->setItem(elem->getStartX() - 1 , elem->getStartY() + i - 1, imgg);
+                }
+            }
+        }
+    }
+}
