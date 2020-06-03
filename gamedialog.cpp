@@ -19,11 +19,16 @@ GameDialog::GameDialog(Logic* serv, QWidget *parent) :
     this->m_music->setMedia(QUrl(audioUrl));
     this->m_music->setVolume(25);
 
-    //could also setup table
+    //removing edit triggers
+    this->m_ui->playerTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    this->m_ui->guessTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+    //should also setup table to depend on N
     //this->m_ui->playerTable->setRowCount(N);
     //this->m_ui->playerTable->setColumnCount(N);
     //also find a formula for the cell size
     //
+
     //start game
     this->game();
 }
