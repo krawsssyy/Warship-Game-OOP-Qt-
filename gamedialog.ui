@@ -52,10 +52,10 @@
   <widget class="QTableWidget" name="playerTable">
    <property name="geometry">
     <rect>
-     <x>20</x>
+     <x>0</x>
      <y>50</y>
-     <width>251</width>
-     <height>251</height>
+     <width>281</width>
+     <height>281</height>
     </rect>
    </property>
    <property name="verticalScrollBarPolicy">
@@ -109,10 +109,10 @@
   <widget class="QTableWidget" name="guessTable">
    <property name="geometry">
     <rect>
-     <x>300</x>
+     <x>290</x>
      <y>50</y>
-     <width>251</width>
-     <height>251</height>
+     <width>281</width>
+     <height>281</height>
     </rect>
    </property>
    <property name="verticalScrollBarPolicy">

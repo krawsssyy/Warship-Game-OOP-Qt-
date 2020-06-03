@@ -1,9 +1,9 @@
 #include "gui.h"
-#include "Logic.h"
 #include <QApplication>
 
 int main(int argc, char *argv[])
 {
+    try{
     QApplication a(argc, argv);
     Repository* userR = new Repository();
     Repository* aiR = new Repository();
@@ -14,4 +14,11 @@ int main(int argc, char *argv[])
     //delete gui;
     //gui = nullptr;
     return a.exec();
+    }
+    catch(Exc& exc) {
+        qDebug() << exc.what() << '\n';
+    }
+    catch(...) {
+        qDebug() << "Unhandled exception!\n";
+    }
 }

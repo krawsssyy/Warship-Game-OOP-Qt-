@@ -1,5 +1,11 @@
 <RCC>
-    <qresource prefix="/bg-img">
-        <file>background.jpg</file>
+    <qresource prefix="/files">
+        <file>textures/background.jpg</file>
+        <file>textures/clear.png</file>
+        <file>textures/hit.png</file>
+        <file>textures/submarine.jpg</file>
+        <file>textures/warship.jpg</file>
+        <file>textures/yacht.jpg</file>
+        <file>audio/audio.mp3</file>
     </qresource>
 </RCC>

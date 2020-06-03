@@ -3,6 +3,7 @@
 
 #include <QDialog>
 #include "Logic.h"
+#include <QtMultimedia/QMediaPlayer>
 
 namespace Ui {
 class GameDialog;
@@ -24,6 +25,7 @@ private slots:
 private:
     Ui::GameDialog* m_ui;
     Logic* m_serv;
+    QMediaPlayer* m_music;
 };
 
 #endif // GAMEDIALOG_H

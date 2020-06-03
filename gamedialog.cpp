@@ -1,18 +1,30 @@
 #include "gamedialog.h"
 #include "ui_gamedialog.h"
 
-const QString warshipPath = "C:\\Users\\Alex\\Desktop\\fac\\an1\\sem2\\oop\\lab12-14game\\gui\\lab12game\\warship.jpg";
-const QString yachtPath = "C:\\Users\\Alex\\Desktop\\fac\\an1\\sem2\\oop\\lab12-14game\\gui\\lab12game\\yacht.jpg";
-const QString submarinePath = "C:\\Users\\Alex\\Desktop\\fac\\an1\\sem2\\oop\\lab12-14game\\gui\\lab12game\\submarine.jpg";
-const QString hitPath = "C:\\Users\\Alex\\Desktop\\fac\\an1\\sem2\\oop\\lab12-14game\\gui\\lab12game\\hit.png";
-const QString clearPath = "C:\\Users\\Alex\\Desktop\\fac\\an1\\sem2\\oop\\lab12-14game\\gui\\lab12game\\clear.png";
+const QString warshipPath = ":/files/textures/warship.jpg";
+const QString yachtPath = ":/files/textures/yacht.jpg";
+const QString submarinePath = ":/files/textures/submarine.jpg";
+const QString hitPath = ":/files/textures/hit.png";
+const QString clearPath = ":/files/textures/clear.png";
+const QString audioUrl = "qrc:/files/audio/audio.mp3";
 
 GameDialog::GameDialog(Logic* serv, QWidget *parent) :
     QDialog(parent),
     m_ui(new Ui::GameDialog),
-    m_serv(serv)
+    m_serv(serv),
+    m_music(new QMediaPlayer)
 {
     this->m_ui->setupUi(this);
+    //setup music
+    this->m_music->setMedia(QUrl(audioUrl));
+    this->m_music->setVolume(25);
+
+    //could also setup table
+    //this->m_ui->playerTable->setRowCount(N);
+    //this->m_ui->playerTable->setColumnCount(N);
+    //also find a formula for the cell size
+    //
+    //start game
     this->game();
 }
 
@@ -22,11 +34,16 @@ GameDialog::~GameDialog()
         delete this->m_ui;
         this->m_ui = nullptr;
     }
+    if(this->m_music) {
+        delete this->m_music;
+        this->m_music = nullptr;
+    }
 }
 
 void GameDialog::on_guessButton_clicked()
 {
     QString guess = this->m_ui->lineEdit->text();
+    this->m_ui->lineEdit->clear();
     std::string actGuess = guess.toStdString();
     bool resUser = this->m_serv->hitReg(actGuess, 'u');
     if(resUser)
@@ -55,13 +72,6 @@ void GameDialog::on_guessButton_clicked()
     //verify if we need to update a hit element
     if(resAI)
         updateAfterHit();
-    int gameState = this->m_serv->getGameStatus();
-    //weird flex but ok
-    if(gameState == -1)
-        throw Exc("The AI won!");
-    else if (gameState == 1)
-        throw Exc("You won!");
-    //
     std::string text;
     if(resUser){
        if(resAI)
@@ -77,32 +87,43 @@ void GameDialog::on_guessButton_clicked()
     }
     QString toShow = QString::fromStdString(text);
     this->m_ui->label->setText(toShow);
+    //weird flex but ok
+    int gameState = this->m_serv->getGameStatus();
+    if(gameState == -1)
+        throw Exc("The AI won!");
+    else if (gameState == 1)
+        throw Exc("You won!");
+    //
 }
 
 void GameDialog::game() {
-//draw board headers with letters
-    for(int i=0;i<this->m_ui->playerTable->columnCount();++i){
-//expensive but no other solution found
-            char s = 97 + i;
-            std::string str(1, s);
-            QString strr = QString::fromStdString(str);
-            this->m_ui->playerTable->setHorizontalHeaderItem(i, new QTableWidgetItem);
-            Q_ASSUME(this->m_ui->playerTable->model()->setHeaderData(i,Qt::Horizontal,strr));
+    //start music
+    this->m_music->play();
+    //draw board headers with letters
+   for(int i=0;i<this->m_ui->playerTable->columnCount();++i) {
+   //expensive but no other solution found
+         char s = 97 + i;
+         std::string str(1, s);
+         QString strr = QString::fromStdString(str);
+         this->m_ui->playerTable->setHorizontalHeaderItem(i, new QTableWidgetItem);
+         Q_ASSUME(this->m_ui->playerTable->model()->setHeaderData(i,Qt::Horizontal,strr));
 
-        }
-    for(int i=0;i<this->m_ui->guessTable->columnCount();++i){
-        char s = 97 + i;
-        std::string str(1, s);
-        QString strr = QString::fromStdString(str);
-        this->m_ui->guessTable->setHorizontalHeaderItem(i, new QTableWidgetItem);
-        Q_ASSUME(this->m_ui->guessTable->model()->setHeaderData(i,Qt::Horizontal,strr));
-        }
+    }
+    for(int i=0;i<this->m_ui->guessTable->columnCount();++i) {
+         char s = 97 + i;
+         std::string str(1, s);
+         QString strr = QString::fromStdString(str);
+         this->m_ui->guessTable->setHorizontalHeaderItem(i, new QTableWidgetItem);
+         Q_ASSUME(this->m_ui->guessTable->model()->setHeaderData(i,Qt::Horizontal,strr));
+    }
    //doing checks for correctly loading images
     QImage img;
     bool loadedWarships = img.load(warshipPath);
     bool loadedYachts = img.load(yachtPath);
     bool loadedSubmarines = img.load(submarinePath);
-    if(!loadedWarships || !loadedYachts || !loadedSubmarines)
+    bool loadedHit = img.load(hitPath);
+    bool loadedClear = img.load(clearPath);
+    if(!loadedWarships || !loadedYachts || !loadedSubmarines || !loadedHit || !loadedClear)
         throw Exc("Some images haven't loaded correctly!");
     //load ai board
     this->m_serv->aiStart();

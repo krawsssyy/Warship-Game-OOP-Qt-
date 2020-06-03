@@ -1,5 +1,6 @@
 #include "Logic.h"
 #include <ctime>
+
 void Logic::addElem(int startX, int startY, int orientation, std::string identifier) {
 	if (identifier == "Warship") {
 		IE* e = new Warship(startX, startY, orientation);
@@ -41,7 +42,15 @@ void Logic::addElem(int startX, int startY, int orientation, std::string identif
 
 std::pair<int, int> Logic::guessDecoder(std::string guess) {
 	this->verifyGuess(guess);
-	return std::pair<int, int>((guess[0] - '0'), (guess[1] - '0') % 48 );
+    if(guess.length() == 2)
+        return std::pair<int, int>((guess[0] - '0'), (guess[1] - '0') % 48 );
+    else if(guess.length() == 3)
+    {
+        std::string number(1, guess[0]);
+        std::string number2(1, guess[1]);
+        int no = std::stoi(number + number2);
+        return std::pair<int, int>(no, (guess[2] - '0') % 48 );
+    }
 }
 
 bool Logic::hitReg(std::string guess,char identifier) {
@@ -184,12 +193,12 @@ bool Logic::hitReg(std::string guess,char identifier) {
 
 std::string Logic::aiGuess() {
 	srand((time_t)time(0));
-	char col = 97 + rand() % N;
-	int row = rand() % N;
+    char col = 97 + rand() % (N + 1);
+    int row = rand() % (N + 1);
 	while(row == 0)
-		row = rand() % N;
-	while(col == 'j')
-		col = 97 + rand() % N;
+        row = rand() % (N + 1);
+    while(col == 97 + N)
+        col = 97 + rand() % (N + 1);
 	std::string s = std::to_string(row) + col;
 	auto inGuess = [this](std::string guess) {
 		for (auto x : this->aiGuesses)
@@ -198,9 +207,9 @@ std::string Logic::aiGuess() {
 		return false;
 	};
 	while (inGuess(s)) {
-		col = 97 + rand() % N;
-		row = rand() % N;
-        if (col == 'j' || row == 0)
+        col = 97 + rand() % (N + 1);
+        row = rand() % (N + 1);
+        if (col == 97 + N || row == 0)
 			continue;
 		else
 			s = std::to_string(row) + col;
@@ -213,30 +222,30 @@ void Logic::aiStart(){
 	srand((time_t)time(0));
 	for (int i = 0; i < k; i++)
 	{
-		int startX = rand() % N, startY = rand() % N, orientation = rand() % 2;
-		while (startX == 0 || (startX > N - 6 && orientation == 1))
-			startX = rand() % N;
-		while (startY == 0 || (startY > N - 6 && orientation == 0))
-			startY = rand() % N;
+        int startX = rand() % (N + 1), startY = rand() % (N + 1), orientation = rand() % 2;
+        while (startX == 0 || (startX > N - 4 && orientation == 1))
+            startX = rand() % (N + 1);
+        while (startY == 0 || (startY > N - 4 && orientation == 0))
+            startY = rand() % (N + 1);
 		this->m_aiR->addElem(new Warship(startX, startY, orientation));
 	}
 	for (int i = 0; i < p; i++)
 	{
-		int startX = rand() % N, startY = rand() % N, orientation = rand() % 2;
-		while (startX == 0 || (startX > N - 4 && orientation == 1))
-			startX = rand() % N;
-		while (startY == 0 || (startY > N - 4 && orientation == 0))
-			startY = rand() % N;
+        int startX = rand() % (N + 1), startY = rand() % (N + 1), orientation = rand() % 2;
+        while (startX == 0 || (startX > N - 2 && orientation == 1))
+            startX = rand() % (N + 1);
+        while (startY == 0 || (startY > N - 2 && orientation == 0))
+            startY = rand() % (N + 1);
 		this->m_aiR->addElem(new Yacht(startX, startY, orientation));
 	}
 	for (int i = 0; i < q; i++)
 	{
 
-		int startX = rand() % N, startY = rand() % N, orientation = rand() % 2;
-		while (startX == 0 || (startX > N - 3 && orientation == 1))
-			startX = rand() % N;
-		while (startY == 0 || (startY > N - 3 && orientation == 0))
-			startY = rand() % N;
+        int startX = rand() % (N + 1), startY = rand() % (N + 1), orientation = rand() % 2;
+        while (startX == 0 || (startX > N - 1 && orientation == 1))
+            startX = rand() % (N + 1);
+        while (startY == 0 || (startY > N - 1 && orientation == 0))
+            startY = rand() % (N + 1);
 		this->m_aiR->addElem(new Submarine(startX, startY, orientation));
 	}
 }
@@ -264,28 +273,41 @@ int Logic::getGameStatus() {
 }
 
 void Logic::verifyGuess(std::string guess) {
-	//if ((N - 1) / 10 == 0)
-	//{
-		if (guess.length() > 2)
-			throw Exc("Invalid guess format!");
-		if (guess[0] < '1' || guess[0] > (49 + N - 2))
-			throw Exc("The row number is invalid!");
-		if (guess[1] < 'a' || guess[1] > (97 + N - 2))
-			throw Exc("The column number is invalid!");
-	/*}
-	else
-	{
-		if (N < 27)
-		{
-			if (guess.length() > 3)
-				throw Exc("Invalid guess format!");
-		}
-		else
-		{
+    if(N < 27)
+    {
+        if (guess.length() == 2)
+        {
+            if (guess[0] < '1' || guess[0] > '9')
+                throw Exc("The row number is invalid!");
+            if (guess[1] < 'a' || guess[1] > (97 + N - 1))
+                throw Exc("The column number is invalid!");
+        }
+        else if(guess.length() == 3)
+            {
+                std::string number(1, guess[0]);
+                if(N / 10 == 1 && guess[0] != '1')
+                    throw Exc("The row number is invalid!");
+                if(N / 10 == 2 && guess[0] != '1' && guess[0] != '2')
+                    throw Exc("The row number is invalid!");
+                if(N / 10 == 2 && guess[1] > *std::to_string(N%10).c_str())
+                    throw Exc("The row number is invalid!");
+                if(N / 10 == 1 && guess[1] > *std::to_string(N%10).c_str())
+                    throw Exc("The row number is invalid!");
+                std::string number2(1, guess[1]);
+                number += number2;
+                int no = std::stoi(number);
+                if(no < 1 || no > N)
+                    throw Exc("The row number is invalid!");
+                if (guess[2] < 'a' || guess[2] > (97 + N - 1))
+                    throw Exc("The column number is invalid!");
+            }
+            else
+                throw Exc("Invalid guess format!");
+    }
 
-		}
-		// TODO - implement
-	} */
+     else
+          throw Exc("Invalid table size!");
+
 }
 
 std::vector<IE*> Logic::getAllUser()

@@ -1,10 +1,11 @@
 #include "gui.h"
 #include "ui_gui.h"
-#include <QDebug>
 #include <QApplication>
 #include <QInputDialog>
 #include <QDir>
 #include <QMessageBox>
+
+const QString bgPath = ":/files/textures/background.jpg";
 
 GUI::GUI(Logic* service, QWidget *parent) : QMainWindow(parent),  m_ui(new Ui::GUI), m_serv(service){
 
@@ -16,14 +17,13 @@ GUI::GUI(Logic* service, QWidget *parent) : QMainWindow(parent),  m_ui(new Ui::G
     connect(this->m_ui->handleGame, SIGNAL(released()), this, SLOT(handleGame()));
     connect(this->m_ui->handleExit, SIGNAL(released()), this, SLOT(close()));
     //setup background
-    //nothing works -.-
-    this->setAutoFillBackground(true);
+    QPixmap bkgnd(bgPath);
+    int widWidth = this->width();
+    int widHeight = this->height();
+    bkgnd = bkgnd.scaled(widWidth, widHeight, Qt::KeepAspectRatioByExpanding);
     QPalette palette;
-    QPixmap pixmap (":/bg-img/background.jpg");
-    palette.setBrush(backgroundRole(), QBrush(pixmap));
+    palette.setBrush(QPalette::Background, bkgnd);
     this->setPalette(palette);
-    //...3hrs and counting
-
     //setup values
     this->m_warOk = false;
     this->m_yaOk = false;
@@ -54,13 +54,13 @@ void GUI::handleWarships() {
        bool ok;
        //Starting row dialog and conversion
        QString startx = QInputDialog::getText(this, tr("Give warship starting row"),
-                                               tr("Starting row(1 to N - 1):"), QLineEdit::Normal,
+                                               tr("Starting row(1 to N):"), QLineEdit::Normal,
                                                tr("1"),&ok);
        if(ok && !startx.isEmpty())
            startX = startx.toInt();
        //Starting column dialog and conversion
        QString starty = QInputDialog::getText(this, tr("Give warship starting column"),
-                                               tr("Starting column(1 to N - 1):"), QLineEdit::Normal,
+                                               tr("Starting column(1 to N):"), QLineEdit::Normal,
                                                tr("1"),&ok);
        if(ok && !starty.isEmpty())
            startY = starty.toInt();
@@ -73,7 +73,6 @@ void GUI::handleWarships() {
        //Adding to service
        this->m_serv->addElem(startX, startY, orientation, "Warship");
        this->m_warCount++;
-       qDebug() << "Warship successfully added!\n";
     }
    if(this->m_warCount == k)
        this->m_warOk = true;
@@ -101,13 +100,13 @@ void GUI::handleYachts() {
        bool ok;
        //Starting row dialog and conversion
        QString startx = QInputDialog::getText(this, tr("Give yacht warship starting row"),
-                                               tr("Starting row(1 to N - 1):"), QLineEdit::Normal,
+                                               tr("Starting row(1 to N):"), QLineEdit::Normal,
                                                tr("1"),&ok);
        if(ok && !startx.isEmpty())
            startX = startx.toInt();
        //Starting column dialog and conversion
        QString starty = QInputDialog::getText(this, tr("Give yacht starting column"),
-                                               tr("Starting column(1 to N - 1):"), QLineEdit::Normal,
+                                               tr("Starting column(1 to N):"), QLineEdit::Normal,
                                                tr("1"),&ok);
        if(ok && !starty.isEmpty())
            startY = starty.toInt();
@@ -120,7 +119,6 @@ void GUI::handleYachts() {
        //Adding to service
        this->m_serv->addElem(startX, startY, orientation, "Yacht");
        this->m_yaCount++;
-       qDebug() << "Yacht successfully added!\n";
     }
    if(this->m_yaCount == p)
        this->m_yaOk = true;
@@ -149,13 +147,13 @@ void GUI::handleSubmarines() {
        bool ok;
        //Starting row dialog and conversion
        QString startx = QInputDialog::getText(this, tr("Give submarine starting row"),
-                                               tr("Starting row(1 to N - 1):"), QLineEdit::Normal,
+                                               tr("Starting row(1 to N):"), QLineEdit::Normal,
                                                tr("1"),&ok);
        if(ok && !startx.isEmpty())
            startX = startx.toInt();
        //Starting column dialog and conversion
        QString starty = QInputDialog::getText(this, tr("Give submarine starting column"),
-                                               tr("Starting column(1 to N - 1):"), QLineEdit::Normal,
+                                               tr("Starting column(1 to N):"), QLineEdit::Normal,
                                                tr("1"),&ok);
        if(ok && !starty.isEmpty())
            startY = starty.toInt();
@@ -168,7 +166,6 @@ void GUI::handleSubmarines() {
        //Adding to service
        this->m_serv->addElem(startX, startY, orientation, "Submarine");
        this->m_subCount++;
-       qDebug() << "Submarine successfully added!\n";
     }
    if(this->m_subCount == q)
        this->m_subOk = true;
@@ -197,7 +194,10 @@ void GUI::handleGame() {
     }
     catch(Exc& exc) {
         QMessageBox msgBox;
-        msgBox.setWindowTitle(tr("Error!"));
+        if(strstr(exc.what(), "won") != nullptr)
+            msgBox.setWindowTitle(tr("Result"));
+        else
+            msgBox.setWindowTitle(tr("Error!"));
         msgBox.setText(exc.what());
         msgBox.exec();
     }

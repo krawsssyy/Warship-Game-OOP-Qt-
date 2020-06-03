@@ -1,11 +1,5 @@
 #pragma once
-#include "Repo.h"
-#include "Yacht.h"
-#include "Submarine.h"
-#include "Warship.h"
 #include "IValidator.h"
-#include <string>
-
 class Logic {
 private:
 	Repository* m_userR;
@@ -28,6 +22,7 @@ public:
 			delete this->m_valid;
 			this->m_valid = nullptr;
 		}
+        this->aiGuesses.clear();
 	}
 	void addElem(int startX, int startY, int orientation, std::string identifier);
 	std::pair<int, int> guessDecoder(std::string guess);
